@@ -818,6 +818,23 @@ helper_claude_trust_needs_down() {
     return 1
 }
 
+helper_claude_trust_confirmed_on_yes() {
+    # True when the newer Claude trust card (pane text $1) currently
+    # marks "Yes, I trust this folder" as the selected option, so Enter
+    # is safe to send. False when the cursor is still on "No, exit" - a
+    # dropped or no-op Down - so the caller must never send Enter into
+    # that default. Only ever called after helper_claude_trust_needs_down
+    # matched the same card's pre-Down text.
+    _helper_flat=$(helper_codex_flat_pane "$1")
+    case $_helper_flat in
+    *'❯ No, exit'*) return 1 ;;
+    esac
+    case $_helper_flat in
+    *'❯ Yes, I trust this folder'*) return 0 ;;
+    esac
+    return 1
+}
+
 helper_codex_pane_has_yn() {
     helper_pane_has_login_picker "$1" && return 1
     helper_codex_pane_is_later_prompt "$1" && return 1
@@ -887,8 +904,10 @@ helper_claude_startup_gate() {
     # start pane, and only the displayed default confirmation for "Yes,
     # I trust this folder" - a Down first when the card highlights "No,
     # exit" by default, so it lands on trust instead of quitting through
-    # it. $1 real herdr, $2 name, $3 pane, $4 the start status to return
-    # when this is not that gate.
+    # it. The Down is verified to have actually moved the selection onto
+    # trust before Enter follows; a dropped or no-op Down never reaches
+    # Enter. $1 real herdr, $2 name, $3 pane, $4 the start status to
+    # return when this is not that gate.
     _helper_real=$1
     _helper_name=$2
     _helper_pane=$3
@@ -924,6 +943,13 @@ helper_claude_startup_gate() {
         # risk an Enter into a screen this gate never signed up to answer.
         helper_claude_pane_has_trust "$_helper_before" || {
             printf '%s\n' "lantern: Claude in $_helper_name left the folder trust gate before it was confirmed" >&2
+            return 1
+        }
+        # Still the same card is not enough: a dropped or no-op Down
+        # leaves the mark on "No, exit", and the Enter below must never
+        # be sent into that default. Confirm the mark actually moved.
+        helper_claude_trust_confirmed_on_yes "$_helper_before" || {
+            printf '%s\n' "lantern: Claude in $_helper_name did not move off the No, exit default after Down" >&2
             return 1
         }
     fi

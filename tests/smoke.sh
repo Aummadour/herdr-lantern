@@ -1436,6 +1436,31 @@ fi
 if helper_claude_trust_needs_down 'Start a new chat? [y/n]'; then
     fail "an unrelated pane must not need a Down"
 fi
+
+# Codex P2: after sending Down, the gate must verify the selection
+# actually moved onto "Yes, I trust this folder", not just that the same
+# trust-card text is still on screen. A dropped or no-op Down leaves the
+# mark on "No, exit" and must never read as confirmed.
+helper_claude_trust_confirmed_on_yes "$(printf '%s\n' \
+    'Accessing workspace:' \
+    '/tmp/demo' \
+    'Quick safety check: is this a project you trust?' \
+    '  No, exit' \
+    '❯ Yes, I trust this folder' \
+    'Enter to confirm · Esc to cancel')" ||
+    fail "a mark on Yes, I trust this folder should read as confirmed"
+if helper_claude_trust_confirmed_on_yes "$(printf '%s\n' \
+    'Accessing workspace:' \
+    '/tmp/demo' \
+    'Quick safety check: is this a project you trust?' \
+    '❯ No, exit' \
+    '  Yes, I trust this folder' \
+    'Enter to confirm · Esc to cancel')"; then
+    fail "a mark still on No, exit must not read as confirmed"
+fi
+if helper_claude_trust_confirmed_on_yes 'Start a new chat? [y/n]'; then
+    fail "an unrelated pane must not read as confirmed"
+fi
 if helper_codex_startup_key 'press enter to confirm or esc to cancel' >/dev/null; then
     fail "a later confirm prompt must not look like a first-run gate"
 fi
@@ -1932,10 +1957,22 @@ claude_trust_pane_no_exit_default() {
         '  Yes, I trust this folder' \
         'Enter to confirm · Esc to cancel' >"$FAKE_PANE"
 }
-rm -f "$FAKE_READY_FILE" "$FAKE_READ_N"
+# Same card, but with the selection actually moved onto trust - what a
+# Down that really worked looks like on screen.
+claude_trust_pane_yes_selected() {
+    printf '%s\n' 'Accessing workspace:' \
+        '/tmp/demo' \
+        "Quick safety check: is this a project you created or one you trust?" \
+        'Claude Code will be able to read, edit, and execute files here.' \
+        '  No, exit' \
+        '❯ Yes, I trust this folder' \
+        'Enter to confirm · Esc to cancel' >"$1"
+}
+rm -f "$FAKE_READY_FILE" "$FAKE_READ_N" "$FAKE_PANE_NEXT"
 claude_trust_pane_no_exit_default
+claude_trust_pane_yes_selected "$FAKE_PANE_NEXT"
 out=$(sh "$root/bin/herdr" agent start reviewer --kind claude --pane w1:p1 2>/dev/null) ||
-    fail "the No, exit default trust card should still recover"
+    fail "the No, exit default trust card should still recover once Down lands"
 printf '%s\n' "$out" | grep -q 'agent send-keys reviewer Down' ||
     fail "the No, exit default did not move the selection down first"
 printf '%s\n' "$out" | grep -q 'agent send-keys reviewer Enter' ||
@@ -1945,6 +1982,22 @@ printf '%s\n' "$out" | grep -q 'agent send-keys reviewer Enter' ||
 [ "$(printf '%s\n' "$out" | grep -c 'agent send-keys reviewer Down')" -eq 1 ] &&
     [ "$(printf '%s\n' "$out" | grep -c 'agent send-keys reviewer Enter')" -eq 1 ] ||
     fail "the No, exit default should send exactly one Down and one Enter"
+
+# Codex P2 regression: a dropped or no-op Down leaves the mark on "No,
+# exit" - the same trust card, unmoved. Enter must never follow it.
+rm -f "$FAKE_READY_FILE" "$FAKE_READ_N" "$FAKE_PANE_NEXT"
+claude_trust_pane_no_exit_default
+if out=$(sh "$root/bin/herdr" agent start reviewer --kind claude --pane w1:p1 2>"$err"); then
+    printf '%s\n' "$out" >&2
+    fail "a dropped Down that leaves No, exit marked must not be reported as seated"
+fi
+printf '%s\n' "$out" | grep -q 'agent send-keys reviewer Down' ||
+    fail "a dropped Down should still have been attempted"
+if printf '%s\n' "$out" | grep -q 'agent send-keys reviewer Enter'; then
+    fail "a dropped Down must not still be followed by Enter"
+fi
+grep -q 'did not move off the No, exit default' "$err" ||
+    fail "a dropped Down should say why it stopped"
 
 # The older layout, where trust is already the highlighted default,
 # still takes just the one Enter - no regression for that shape.
