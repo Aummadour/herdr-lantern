@@ -805,6 +805,19 @@ helper_claude_pane_has_trust() {
     return 1
 }
 
+helper_claude_trust_needs_down() {
+    # True when the Claude folder trust card (pane text $1) is the newer
+    # layout that highlights "No, exit" first instead of "Yes, I trust
+    # this folder". A bare Enter on that layout quits the seat rather
+    # than trusting it, so the gate must move the selection down to the
+    # trust option before confirming. Only ever called after
+    # helper_claude_pane_has_trust already matched this exact card.
+    case $(helper_codex_flat_pane "$1") in
+    *"No, exit"*) return 0 ;;
+    esac
+    return 1
+}
+
 helper_codex_pane_has_yn() {
     helper_pane_has_login_picker "$1" && return 1
     helper_codex_pane_is_later_prompt "$1" && return 1
@@ -871,8 +884,11 @@ helper_codex_seat_ok() {
 
 helper_claude_startup_gate() {
     # Claude first-run folder trust. Only that screen, only the named
-    # start pane, and only one Enter. $1 real herdr, $2 name, $3 pane,
-    # $4 the start status to return when this is not that gate.
+    # start pane, and only the displayed default confirmation for "Yes,
+    # I trust this folder" - a Down first when the card highlights "No,
+    # exit" by default, so it lands on trust instead of quitting through
+    # it. $1 real herdr, $2 name, $3 pane, $4 the start status to return
+    # when this is not that gate.
     _helper_real=$1
     _helper_name=$2
     _helper_pane=$3
@@ -893,6 +909,24 @@ helper_claude_startup_gate() {
         "$_helper_real" agent wait "$_helper_name" --until idle --until done \
             --timeout 2000 >/dev/null 2>&1 || true
     done
+    if helper_claude_trust_needs_down "$_helper_before"; then
+        _helper_got=$("$_helper_real" agent get "$_helper_name" 2>/dev/null) ||
+            return "$_helper_status"
+        helper_seat_ok "$_helper_got" "$_helper_pane" claude ||
+            return "$_helper_status"
+        "$_helper_real" agent send-keys "$_helper_name" Down || return $?
+        "$_helper_real" agent wait "$_helper_name" --until idle --until done \
+            --timeout 2000 >/dev/null 2>&1 || true
+        _helper_before=$("$_helper_real" agent read "$_helper_name" --lines 60 2>/dev/null) ||
+            _helper_before=
+        # The Down must still land on the same documented trust card. A
+        # pane that moved on to anything else is left alone rather than
+        # risk an Enter into a screen this gate never signed up to answer.
+        helper_claude_pane_has_trust "$_helper_before" || {
+            printf '%s\n' "lantern: Claude in $_helper_name left the folder trust gate before it was confirmed" >&2
+            return 1
+        }
+    fi
     _helper_got=$("$_helper_real" agent get "$_helper_name" 2>/dev/null) ||
         return "$_helper_status"
     helper_seat_ok "$_helper_got" "$_helper_pane" claude ||

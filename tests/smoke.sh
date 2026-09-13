@@ -1411,6 +1411,31 @@ fi
 if helper_claude_pane_has_trust 'claude is starting...'; then
     fail "unrelated pane text must not look like the Claude gate"
 fi
+
+# Newer Claude builds default the trust card's highlight to "No, exit"
+# instead of "Yes, I trust this folder". A bare Enter would pick that
+# default and quit rather than trust, so the gate must recognize this
+# shape needs a Down before Enter - and must not say so for the older
+# layout where trust is already the default.
+helper_claude_trust_needs_down "$(printf '%s\n' \
+    'Accessing workspace:' \
+    '/tmp/demo' \
+    'Quick safety check: is this a project you trust?' \
+    '❯ No, exit' \
+    '  Yes, I trust this folder' \
+    'Enter to confirm · Esc to cancel')" ||
+    fail "the No, exit default should need a Down before Enter"
+if helper_claude_trust_needs_down "$(printf '%s\n' \
+    'Accessing workspace' \
+    '/tmp/demo' \
+    '› 1. Yes, I trust this folder' \
+    '  2. No, choose another folder' \
+    'Enter to confirm')"; then
+    fail "the older Yes-first layout should not need a Down"
+fi
+if helper_claude_trust_needs_down 'Start a new chat? [y/n]'; then
+    fail "an unrelated pane must not need a Down"
+fi
 if helper_codex_startup_key 'press enter to confirm or esc to cancel' >/dev/null; then
     fail "a later confirm prompt must not look like a first-run gate"
 fi
@@ -1890,6 +1915,64 @@ if printf '%s\n' "$out" | grep -q 'agent send-keys'; then
     fail "a Claude pane mismatch must not send keys into another agent's pane"
 fi
 export FAKE_AGENT_PANE=w1:p1
+
+# Reproduces the reported defect: newer Claude builds default the trust
+# card's highlighted choice to "No, exit" instead of "Yes, I trust this
+# folder". A bare Enter would pick that default and quit, so the seat
+# never becomes ready and Herdr keeps returning agent_not_ready on this
+# named pane - and a caller retry then hits agent_name_taken instead of
+# a seated agent. The gate must send Down to reach the trust option
+# before the Enter that confirms it.
+claude_trust_pane_no_exit_default() {
+    printf '%s\n' 'Accessing workspace:' \
+        '/tmp/demo' \
+        "Quick safety check: is this a project you created or one you trust?" \
+        'Claude Code will be able to read, edit, and execute files here.' \
+        '❯ No, exit' \
+        '  Yes, I trust this folder' \
+        'Enter to confirm · Esc to cancel' >"$FAKE_PANE"
+}
+rm -f "$FAKE_READY_FILE" "$FAKE_READ_N"
+claude_trust_pane_no_exit_default
+out=$(sh "$root/bin/herdr" agent start reviewer --kind claude --pane w1:p1 2>/dev/null) ||
+    fail "the No, exit default trust card should still recover"
+printf '%s\n' "$out" | grep -q 'agent send-keys reviewer Down' ||
+    fail "the No, exit default did not move the selection down first"
+printf '%s\n' "$out" | grep -q 'agent send-keys reviewer Enter' ||
+    fail "the No, exit default did not confirm trust with Enter"
+[ "$(printf '%s\n' "$out" | grep -n 'agent send-keys reviewer' | head -n1)" = "$(printf '%s\n' "$out" | grep -n 'agent send-keys reviewer Down' | head -n1)" ] ||
+    fail "Down must be sent before Enter on the No, exit default"
+[ "$(printf '%s\n' "$out" | grep -c 'agent send-keys reviewer Down')" -eq 1 ] &&
+    [ "$(printf '%s\n' "$out" | grep -c 'agent send-keys reviewer Enter')" -eq 1 ] ||
+    fail "the No, exit default should send exactly one Down and one Enter"
+
+# The older layout, where trust is already the highlighted default,
+# still takes just the one Enter - no regression for that shape.
+rm -f "$FAKE_READY_FILE" "$FAKE_READ_N"
+claude_trust_pane
+out=$(sh "$root/bin/herdr" agent start reviewer --kind claude --pane w1:p1 2>/dev/null) ||
+    fail "the Yes-first trust card should still recover with one Enter"
+if printf '%s\n' "$out" | grep -q 'agent send-keys reviewer Down'; then
+    fail "the Yes-first trust card must not receive a Down"
+fi
+[ "$(printf '%s\n' "$out" | grep -c 'agent send-keys')" -eq 1 ] ||
+    fail "the Yes-first trust card should still send exactly one key"
+
+# A Down that lands somewhere else - not the documented trust card - must
+# not be followed by a blind Enter.
+rm -f "$FAKE_READY_FILE" "$FAKE_READ_N" "$FAKE_PANE_NEXT"
+claude_trust_pane_no_exit_default
+printf '%s\n' 'Start a new chat? [y/n]' >"$FAKE_PANE_NEXT"
+if out=$(sh "$root/bin/herdr" agent start reviewer --kind claude --pane w1:p1 2>"$err"); then
+    printf '%s\n' "$out" >&2
+    fail "a Down that leaves the trust card must not be reported as seated"
+fi
+if printf '%s\n' "$out" | grep -q 'agent send-keys reviewer Enter'; then
+    fail "a Down that leaves the trust card must not still send Enter"
+fi
+grep -q 'left the folder trust gate' "$err" ||
+    fail "leaving the trust card after Down should say why"
+rm -f "$FAKE_PANE_NEXT"
 
 # Unrelated start failure, even with the folder trust screen on show.
 export FAKE_START_ERR=pane_not_found
