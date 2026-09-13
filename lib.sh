@@ -821,17 +821,23 @@ helper_claude_trust_needs_down() {
 helper_claude_trust_confirmed_on_yes() {
     # True when the newer Claude trust card (pane text $1) currently
     # marks "Yes, I trust this folder" as the selected option, so Enter
-    # is safe to send. False when the cursor is still on "No, exit" - a
-    # dropped or no-op Down - so the caller must never send Enter into
-    # that default. Only ever called after helper_claude_trust_needs_down
-    # matched the same card's pre-Down text.
+    # is safe to send. False when the cursor is still on "No, exit", or
+    # the mark cannot be placed at all - a dropped or no-op Down, or
+    # anything ambiguous - so the caller must never send Enter into
+    # that default. A narrow pane can wrap the selected label across
+    # lines; helper_codex_flat_pane turns that wrap into extra
+    # whitespace, so the label match tolerates any run of whitespace
+    # between its words without loosening which option the marker must
+    # sit directly in front of. Only ever called after
+    # helper_claude_trust_needs_down matched the same card's pre-Down
+    # text.
     _helper_flat=$(helper_codex_flat_pane "$1")
     case $_helper_flat in
     *'❯ No, exit'*) return 1 ;;
     esac
-    case $_helper_flat in
-    *'❯ Yes, I trust this folder'*) return 0 ;;
-    esac
+    printf '%s\n' "$_helper_flat" |
+        grep -qE '❯[[:space:]]*Yes,[[:space:]]+I[[:space:]]+trust[[:space:]]+this[[:space:]]+folder' &&
+        return 0
     return 1
 }
 

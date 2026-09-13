@@ -1461,6 +1461,42 @@ fi
 if helper_claude_trust_confirmed_on_yes 'Start a new chat? [y/n]'; then
     fail "an unrelated pane must not read as confirmed"
 fi
+
+# Codex P2: a narrow pane wraps the selected label across lines (for
+# example after "I"). helper_codex_flat_pane turns that wrap into extra
+# whitespace, so the match must tolerate any run of whitespace between
+# the label's words without loosening which option the marker sits in
+# front of.
+helper_claude_trust_confirmed_on_yes "$(printf '%s\n' \
+    'Accessing workspace:' \
+    '/tmp/demo' \
+    'Quick safety check: is this a project you trust?' \
+    '  No, exit' \
+    '❯ Yes, I' \
+    '  trust this folder' \
+    'Enter to confirm · Esc to cancel')" ||
+    fail "a wrapped Yes selection should still read as confirmed"
+helper_claude_trust_confirmed_on_yes "$(printf '%s\n' \
+    'Accessing workspace:' \
+    '/tmp/demo' \
+    'Quick safety check: is this a project you trust?' \
+    '  No, exit' \
+    '❯ Yes,   I    trust  this   folder' \
+    'Enter to confirm · Esc to cancel')" ||
+    fail "extra whitespace inside the Yes label should still read as confirmed"
+# Wrapping must not blur the marker into matching the wrong option: the
+# unselected label always sits in the pane too, unmarked.
+if helper_claude_trust_confirmed_on_yes "$(printf '%s\n' \
+    'Accessing workspace:' \
+    '/tmp/demo' \
+    'Quick safety check: is this a project you trust?' \
+    '❯ No,' \
+    '  exit' \
+    '  Yes, I' \
+    '  trust this folder' \
+    'Enter to confirm · Esc to cancel')"; then
+    fail "a wrapped No, exit selection must not read as confirmed"
+fi
 if helper_codex_startup_key 'press enter to confirm or esc to cancel' >/dev/null; then
     fail "a later confirm prompt must not look like a first-run gate"
 fi
@@ -1998,6 +2034,32 @@ if printf '%s\n' "$out" | grep -q 'agent send-keys reviewer Enter'; then
 fi
 grep -q 'did not move off the No, exit default' "$err" ||
     fail "a dropped Down should say why it stopped"
+
+# Codex P2 regression: a narrow pane wraps the selected "Yes, I trust
+# this folder" label across lines after a real, working Down. That must
+# still read as confirmed and reach Enter, not be mistaken for a
+# dropped Down.
+claude_trust_pane_yes_selected_wrapped() {
+    printf '%s\n' 'Accessing workspace:' \
+        '/tmp/demo' \
+        "Quick safety check: is this a project you created or one you trust?" \
+        'Claude Code will be able to read, edit, and execute files here.' \
+        '  No, exit' \
+        '❯ Yes, I' \
+        '  trust this folder' \
+        'Enter to confirm · Esc to cancel' >"$1"
+}
+rm -f "$FAKE_READY_FILE" "$FAKE_READ_N" "$FAKE_PANE_NEXT"
+claude_trust_pane_no_exit_default
+claude_trust_pane_yes_selected_wrapped "$FAKE_PANE_NEXT"
+out=$(sh "$root/bin/herdr" agent start reviewer --kind claude --pane w1:p1 2>/dev/null) ||
+    fail "a wrapped Yes selection after Down should still recover"
+printf '%s\n' "$out" | grep -q 'agent send-keys reviewer Down' ||
+    fail "a wrapped Yes selection did not move the selection down first"
+printf '%s\n' "$out" | grep -q 'agent send-keys reviewer Enter' ||
+    fail "a wrapped Yes selection did not confirm trust with Enter"
+[ "$(printf '%s\n' "$out" | grep -c 'agent send-keys reviewer Enter')" -eq 1 ] ||
+    fail "a wrapped Yes selection should send exactly one Enter"
 
 # The older layout, where trust is already the highlighted default,
 # still takes just the one Enter - no regression for that shape.
