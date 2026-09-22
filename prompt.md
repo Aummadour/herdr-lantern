@@ -132,15 +132,15 @@ For a request such as "have Codex review battle-paddle #166":
    the review request. That is one argument. Do not send a second prompt.
 7. Codex uses `herdr agent start <slug> --kind codex --pane <pane_id> --
    <model args> --dangerously-bypass-approvals-and-sandbox review --base <base>
-   "Review PR #<number>: <title>. Return findings only. Do not edit."`.
+   "<workspace brief> Review PR #<number>: <title>. Return findings only. Do not edit."`.
 8. Cursor has no review subcommand on this machine. It has read-only plan
    mode. Use `herdr agent start <slug> --kind cursor --pane <pane_id> --
-   <model args> --auto-review --trust --mode plan "Review PR #<number>:
+   <model args> --auto-review --trust --mode plan "<workspace brief> Review PR #<number>:
    <title>. Inspect gh pr view and gh pr diff. Return findings only."`.
    A bare Grok review uses this route with the live Cursor Grok model.
 9. Grok Build has no review subcommand on this machine. It has the `-p`
    single-turn headless flag. Use `herdr agent start <slug> --kind grok
-   --pane <pane_id> -- <model args> --permission-mode auto -p "Review PR
+   --pane <pane_id> -- <model args> --permission-mode auto -p "<workspace brief> Review PR
    #<number>: <title>. Inspect gh pr view and gh pr diff. Return findings only.
    Do not edit."`.
 10. Run the gated workspace, worktree, tab, prompt, and agent commands.
