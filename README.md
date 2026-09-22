@@ -168,7 +168,13 @@ for a public repo.
 After a seat the lantern renames the agent's tab to
 `<slug> · <kind>` and says in one line what is running where: the slug, the
 kind, the live model, effort, fast state, and the task the agent was given, or
-that it has none yet.
+that it has the workspace brief and no task yet.
+
+Every fresh seat gets one opening prompt. The prompt tells the agent to load
+the herdr skill, how to prompt the other agents in that workspace, and to put
+more work in a new tab instead of splitting its own tab. The herdr skill
+defaults to a sibling pane. This prompt overrides that default. A resume does
+not send the prompt again.
 
 How to use it (GitHub Pages, after this lands on `main`):
 [aigorahub.github.io/herdr-lantern](https://aigorahub.github.io/herdr-lantern/).
