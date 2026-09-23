@@ -2,7 +2,7 @@
 
 All notable changes to Lantern, by Elves are documented here.
 
-## [Unreleased]
+## [0.14.0] - 2026-09-23
 
 ### Changed
 
@@ -14,6 +14,7 @@ All notable changes to Lantern, by Elves are documented here.
   CLI. The Grok 4.6 Cursor id remains `cursor-grok-4.6-high-fast`.
 - Codex routes name `gpt-6-sol` and `gpt-6-luna`. Bare `sol`, bare `luna`,
   and bare `gpt-6` stay ambiguous. Cursor routes name Codex 5.3 and Opus 5.5.
+- The README, both guides, and the team page show version 0.14.0.
 
 ## [0.13.0] - 2026-09-22
 
