@@ -126,7 +126,8 @@ def cursor_substitute(model: str, models: list[str]) -> dict[str, object] | None
     tokens = words(model)
     choice = None
     if "grok" in tokens:
-        choice = cursor_choice(models, {"cursor", "grok", "high", "fast"}, model)
+        choice = cursor_choice(models, {"grok", "4.7", "high", "fast"}, model)
+        choice = choice or cursor_choice(models, {"grok", "4.6", "high", "fast"}, model)
         choice = choice or cursor_choice(models, {"gpt", "5.6", "sol", "high", "fast"})
     elif "sol" in tokens:
         choice = cursor_choice(models, {"gpt", "5.6", "terra", "high", "fast"})
@@ -225,11 +226,13 @@ def claude_substitute(
     if not claude_global_exhausted(buckets) and "fable" in model.lower() and claude_alias_available(
         "opus", "xhigh", models, buckets
     ):
-        return {"kind": "claude", "model": "opus", "effort": "xhigh", "fast": False, "argv": ["--model", "opus", "--effort", "xhigh"]}
+        opus_id = models["opus"][0]
+        return {"kind": "claude", "model": "opus", "effort": "xhigh", "fast": False, "argv": ["--model", opus_id, "--effort", "xhigh"]}
     if not claude_global_exhausted(buckets) and "opus" in model.lower() and claude_alias_available(
         "sonnet", "high", models, buckets
     ):
-        return {"kind": "claude", "model": "sonnet", "effort": "high", "fast": False, "argv": ["--model", "sonnet", "--effort", "high"]}
+        sonnet_id = models["sonnet"][0]
+        return {"kind": "claude", "model": "sonnet", "effort": "high", "fast": False, "argv": ["--model", sonnet_id, "--effort", "high"]}
     return cursor_sol_substitute()
 
 
@@ -281,10 +284,22 @@ def check(kind: str, model: str, effort: str) -> int:
     if kind == "grok":
         models = grok_models()
         if model not in models:
-            choice = cursor_choice(models, {"grok", "4.5"})
+            ranked = (
+                ({"grok", "4.7", "build", "fast"}, "medium"),
+                ({"grok", "4.7"}, "high"),
+                ({"grok", "4.6"}, "high"),
+                ({"grok", "4.5"}, "high"),
+            )
+            choice = None
+            effort = "high"
+            for required, ranked_effort in ranked:
+                choice = cursor_choice(models, required, model)
+                if choice:
+                    effort = ranked_effort
+                    break
             substitute = None
             if choice:
-                substitute = {"kind": "grok", "model": choice, "effort": "high", "fast": False, "argv": ["-m", choice, "--reasoning-effort", "high"]}
+                substitute = {"kind": "grok", "model": choice, "effort": effort, "fast": "fast" in words(choice), "argv": ["-m", choice, "--reasoning-effort", effort]}
             return report_unavailable(kind, model, f"{model} is absent from grok models", substitute)
         return report_available(kind, model, effort)
     models = codex_models()

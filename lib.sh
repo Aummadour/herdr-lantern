@@ -329,7 +329,7 @@ helper_cursor_default_model() {
     # The one model default the plugin owns: Cursor agent with an empty
     # HELPER_MODEL. launch.sh builds the argv from this and the chat
     # identity names it, so it lives here once.
-    printf 'cursor-grok-4.6-high-fast'
+    printf 'grok-4.7-high-fast'
 }
 
 helper_chat_identity() {
@@ -982,7 +982,8 @@ helper_relay_agent_start() {
     # first-run gate kills the seat. For Codex, trust and a new-chat
     # confirm can appear in sequence, and a [y/n] prompt may still need
     # Enter after y. For Claude, the only gate handled is the folder
-    # trust screen, and the only key is one Enter. This stays on that
+    # trust screen. A card that highlights No, exit gets Down, then Enter
+    # only after the marker is on Yes. An older card gets one Enter. This stays on that
     # same named pane and sends only those keys. Any other failure,
     # another kind, or another agent's pane is left alone.
     _helper_real=$1

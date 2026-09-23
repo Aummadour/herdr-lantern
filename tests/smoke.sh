@@ -427,7 +427,10 @@ cat <<'MODELS'
 Available models
 auto - Auto (default)
 gpt-5.6-sol-high-fast - GPT-5.6 Sol High Fast
+grok-4.7-high-fast - Grok 4.7 High Fast
 cursor-grok-4.6-high-fast - Cursor Grok 4.6 Fast
+gpt-5.3-codex-high-fast - Codex 5.3 High Fast
+claude-opus-5-5-high-fast - Claude Opus 5.5 1M High Fast
 claude-opus-5-high-fast - Claude Opus 5 1M Fast
 claude-opus-5-high - Claude Opus 5 1M
 MODELS
@@ -436,9 +439,11 @@ cat >"$model_dir/grok" <<'EOF'
 #!/bin/sh
 [ "$1" = "models" ] || exit 2
 cat <<'MODELS'
-Default model: grok-4.6
+Default model: grok-4.7-build-fast
 Available models:
-  * grok-4.6 (default)
+  - grok-4.7
+  * grok-4.7-build-fast (default)
+  - grok-4.6
   - grok-4.5
 MODELS
 EOF
@@ -488,16 +493,21 @@ if not "%1"=="--list-models" exit /b 2
 echo Available models
 echo auto - Auto (default)
 echo gpt-5.6-sol-high-fast - GPT-5.6 Sol High Fast
+echo grok-4.7-high-fast - Grok 4.7 High Fast
 echo cursor-grok-4.6-high-fast - Cursor Grok 4.6 Fast
+echo gpt-5.3-codex-high-fast - Codex 5.3 High Fast
+echo claude-opus-5-5-high-fast - Claude Opus 5.5 1M High Fast
 echo claude-opus-5-high-fast - Claude Opus 5 1M Fast
 echo claude-opus-5-high - Claude Opus 5 1M
 EOF
 cat >"$model_dir/grok.cmd" <<'EOF'
 @echo off
 if not "%1"=="models" exit /b 2
-echo Default model: grok-4.6
+echo Default model: grok-4.7-build-fast
 echo Available models:
-echo   * grok-4.6 (default)
+echo   - grok-4.7
+echo   * grok-4.7-build-fast (default)
+echo   - grok-4.6
 echo   - grok-4.5
 EOF
 cat >"$model_dir/claude.cmd" <<'EOF'
@@ -558,14 +568,29 @@ grok_route=$(run_model_route cursor \
     "cursor grok 4.6 high fast") || fail "Cursor Grok spoken model route"
 printf '%s\n' "$grok_route" | grep -qF '"argv":["--model","cursor-grok-4.6-high-fast"]' ||
     fail "Cursor Grok route did not use the listed model ID"
+grok47_route=$(run_model_route cursor \
+    "grok 4.7 high fast") || fail "Cursor Grok 4.7 spoken model route"
+printf '%s\n' "$grok47_route" | grep -qF '"argv":["--model","grok-4.7-high-fast"]' ||
+    fail "Cursor Grok 4.7 route did not use the listed model ID"
+if run_model_route cursor "cursor grok 4.7 high fast" >/dev/null 2>&1; then
+    fail "Cursor route invented a cursor-grok-4.7 id"
+fi
+codex53_route=$(run_model_route cursor \
+    "codex 5.3 high fast") || fail "Cursor Codex 5.3 spoken model route"
+printf '%s\n' "$codex53_route" | grep -qF '"argv":["--model","gpt-5.3-codex-high-fast"]' ||
+    fail "Cursor Codex 5.3 route did not use the listed model ID"
+opus55_route=$(run_model_route cursor \
+    "opus 5.5 high fast") || fail "Cursor Opus 5.5 spoken model route"
+printf '%s\n' "$opus55_route" | grep -qF '"argv":["--model","claude-opus-5-5-high-fast"]' ||
+    fail "Cursor Opus 5.5 route did not use the listed model ID"
 opus_route=$(run_model_route cursor \
     "opus 5 high fast") || fail "Cursor Opus spoken model route"
 printf '%s\n' "$opus_route" | grep -qF '"argv":["--model","claude-opus-5-high-fast"]' ||
     fail "Cursor Opus route did not use the listed model ID"
 grok_default=$(run_model_route grok \
     default) || fail "Grok live default route"
-printf '%s\n' "$grok_default" | grep -qF '"argv":["-m","grok-4.6","--reasoning-effort","high"]' ||
-    fail "Grok default did not use live Grok 4.6 at high effort"
+printf '%s\n' "$grok_default" | grep -qF '"argv":["-m","grok-4.7-build-fast","--reasoning-effort","medium"]' ||
+    fail "Grok default did not use live grok-4.7-build-fast at medium effort"
 if fable_check=$(run_model_preflight claude fable high); then
     fail "Claude preflight accepted an exhausted Fable bucket"
 else
@@ -638,16 +663,16 @@ fi
 [ "$preflight_status" -eq 3 ] || fail "Cursor catalog miss should return unavailable"
 printf '%s\n' "$cursor_miss" | grep -qF '"available":false' ||
     fail "Cursor catalog miss did not fail closed"
-printf '%s\n' "$cursor_miss" | grep -qF '"substitute":{"kind":"cursor","model":"cursor-grok-4.6-high-fast"' ||
+printf '%s\n' "$cursor_miss" | grep -qF '"substitute":{"kind":"cursor","model":"grok-4.7-high-fast"' ||
     fail "Cursor Grok miss did not propose the next live Cursor Grok model"
-if grok_miss=$(run_model_preflight grok grok-4.7 high); then
+if grok_miss=$(run_model_preflight grok grok-4.8 high); then
     fail "Grok preflight accepted a missing catalog model"
 else
     preflight_status=$?
 fi
 [ "$preflight_status" -eq 3 ] || fail "Grok catalog miss should return unavailable"
-printf '%s\n' "$grok_miss" | grep -qF '"substitute":{"kind":"grok","model":"grok-4.5","effort":"high"' ||
-    fail "Grok Build miss did not propose live Grok 4.5 high"
+printf '%s\n' "$grok_miss" | grep -qF '"substitute":{"kind":"grok","model":"grok-4.7-build-fast","effort":"medium"' ||
+    fail "Grok Build miss did not propose live grok-4.7-build-fast"
 if run_model_route codex \
     "5.6 terra high fast" >/dev/null 2>&1; then
     fail "model route accepted fast for a model without fast service"
@@ -685,14 +710,16 @@ for review_kind in Cursor Grok; do
 done
 grep -qF '"Cursor" means `--kind cursor`' "$root/prompt.md" ||
     fail "prompt.md does not route Cursor to the Cursor kind"
-grep -qF '"open battle paddle with Grok" | Seat with `--kind cursor`' "$root/prompt.md" ||
-    fail "prompt.md does not route bare Grok through Cursor"
+grep -qF '"open battle paddle with Grok" | Seat with `--kind grok`' "$root/prompt.md" ||
+    fail "prompt.md does not route bare Grok through Grok Build"
 grep -qF '"open battle paddle with Grok Build", "open with SuperGrok" | Seat with `--kind grok`' "$root/prompt.md" ||
     fail "prompt.md does not route Grok Build to the Grok CLI"
 grep -qF '"open battle paddle in Cursor with Grok"' "$root/prompt.md" ||
     fail "prompt.md does not name the explicit Cursor Grok route"
-grep -qF '"Grok review on XYZ", "have Cursor Grok review that PR" | Use the named pull request route with Cursor plan mode' "$root/prompt.md" ||
-    fail "prompt.md does not route bare Grok review through Cursor"
+grep -qF '"Grok review on XYZ", "have Grok review that PR" | Use the named pull request route with Grok Build single-turn mode' "$root/prompt.md" ||
+    fail "prompt.md does not route bare Grok review through Grok Build"
+grep -qF '"Cursor Grok review on XYZ", "have Cursor Grok review that PR"' "$root/prompt.md" ||
+    fail "prompt.md does not keep Cursor Grok review on the Cursor CLI"
 grep -qF '"Grok Build review on XYZ", "have SuperGrok review that PR" | Use the named pull request route with Grok Build single-turn mode' "$root/prompt.md" ||
     fail "prompt.md does not route Grok Build review through the Grok CLI"
 for preflight_file in prompt.md launch.sh README.md; do
@@ -701,8 +728,8 @@ for preflight_file in prompt.md launch.sh README.md; do
     grep -qF 'usage line with no reset' "$root/$preflight_file" ||
         fail "$preflight_file still requires a reset time on Claude usage"
 done
-grep -qF '"Grok" also' "$root/launch.sh" ||
-    fail "launch.sh does not route bare Grok through Cursor"
+grep -qF 'Grok" means \`--kind grok\`' "$root/launch.sh" ||
+    fail "launch.sh does not route bare Grok through Grok Build"
 grep -qF '"Grok Build" and' "$root/launch.sh" ||
     fail "launch.sh does not route Grok Build to the Grok CLI"
 grep -qF 'Never merge' "$root/prompt.md" ||
@@ -2535,7 +2562,7 @@ HELPER_CWD="~"' ' [--permission-mode] [smart]'
 argv_is "cursor agent" 'HELPER_AGENT="agent"
 HELPER_MODEL=""
 HELPER_PERMISSION="smart"
-HELPER_CWD="~"' ' [--model] [cursor-grok-4.6-high-fast] [--trust] [--sandbox] [disabled] [--auto-review]'
+HELPER_CWD="~"' ' [--model] [grok-4.7-high-fast] [--trust] [--sandbox] [disabled] [--auto-review]'
 
 argv_is "cursor alias" 'HELPER_AGENT="cursor"
 HELPER_MODEL="m"
@@ -2807,6 +2834,29 @@ for seat_file in prompt.md launch.sh; do
 done
 grep -qF 'tab rename' "$root/prompt.md" ||
     fail "prompt.md should rename a seated agent's tab"
+# A fresh seat must hear how to use Herdr with the other agents in its
+# workspace. The herdr skill defaults to splitting the current tab, so both
+# instruction copies have to carry the override or a seated agent will split.
+for brief_file in prompt.md launch.sh herd-workflows.md; do
+    grep -qF 'Load the herdr skill' "$root/$brief_file" ||
+        fail "$brief_file does not tell a fresh seat to load the herdr skill"
+    grep -qF 'herdr pane split' "$root/$brief_file" ||
+        fail "$brief_file does not forbid splitting the seated tab"
+    grep -qF 'herdr tab create' "$root/$brief_file" ||
+        fail "$brief_file does not tell a seated agent to use a new tab"
+    grep -qF 'HERDR_WORKSPACE_ID' "$root/$brief_file" ||
+        fail "$brief_file does not name the workspace for peer commands"
+done
+for brief_file in prompt.md launch.sh; do
+    grep -qF 'Workspace brief' "$root/$brief_file" ||
+        fail "$brief_file has no workspace brief"
+    grep -qF 'overrides the herdr skill default' "$root/$brief_file" ||
+        fail "$brief_file does not override the herdr skill pane split"
+    grep -qF 'Resume and continue do not send' "$root/$brief_file" ||
+        fail "$brief_file resends the workspace brief on resume"
+    grep -qF 'has the workspace brief and no task yet' "$root/$brief_file" ||
+        fail "$brief_file still announces a seat with no brief"
+done
 printf 'ok: the chat and its seats say what they run\n'
 
 # Field status is the whole field. Light-up and "what's going on" used to

@@ -129,7 +129,7 @@ def codex_route(phrase: str) -> dict[str, object]:
         phrase = "astra"
     parsed = parse_phrase(phrase, keep_effort=False)
     if set(parsed.terms) <= {"gpt", "codex", "6"} and "6" in parsed.terms:
-        fail("model phrase is ambiguous: name astra or an exact model such as gpt-5.5")
+        fail("model phrase is ambiguous: name astra, sol, or luna")
     try:
         models = listed_codex_models(run_catalog(["codex", "debug", "models"]))
     except ValueError as error:
@@ -248,19 +248,24 @@ def grok_route(phrase: str) -> dict[str, object]:
     if phrase.strip().lower() == "default":
         names = [name for name, _ in rows]
         preferred = (
-            "grok-4.6-high-fast",
-            "grok-4.6-fast",
-            "grok-4.6",
-            "grok-4.5-high-fast",
-            "grok-4.5-fast",
-            "grok-4.5",
+            ("grok-4.7-build-fast", "medium"),
+            ("grok-4.7", "high"),
+            ("grok-4.7-high-fast", "high"),
+            ("grok-4.7-fast", "high"),
+            ("grok-4.6-high-fast", "high"),
+            ("grok-4.6-fast", "high"),
+            ("grok-4.6", "high"),
+            ("grok-4.5-high-fast", "high"),
+            ("grok-4.5-fast", "high"),
+            ("grok-4.5", "high"),
         )
-        model_id = next((name for name in preferred if name in names), None)
-        if model_id is None:
+        choice = next(((name, effort) for name, effort in preferred if name in names), None)
+        if choice is None:
             fail("Grok catalog has no approved default")
+        model_id, effort = choice
         fast = "fast" in candidate_tokens(model_id)
-        argv = ["-m", model_id, "--reasoning-effort", "high"]
-        return {"kind": "grok", "model": model_id, "effort": "high", "fast": fast, "argv": argv}
+        argv = ["-m", model_id, "--reasoning-effort", effort]
+        return {"kind": "grok", "model": model_id, "effort": effort, "fast": fast, "argv": argv}
     parsed = parse_phrase(phrase, keep_effort=False)
     model_id = choose(rows, parsed.terms)
     if parsed.fast and "fast" not in candidate_tokens(model_id):

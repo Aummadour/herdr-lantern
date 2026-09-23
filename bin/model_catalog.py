@@ -107,9 +107,6 @@ def claude_model_catalog(run) -> dict[str, tuple[str, set[str]]]:
         catalog = {}
         for row in rows:
             value, model = row["value"], row["resolvedModel"]
-            # Headless catalog responses can still carry stray terminal control bytes
-            # (e.g. leftover ANSI codes) around a model identity; strip those before
-            # validating or using the identity for alias/route lookup.
             if isinstance(value, str):
                 value = strip_terminal_control(value)
             if isinstance(model, str):
@@ -118,13 +115,12 @@ def claude_model_catalog(run) -> dict[str, tuple[str, set[str]]]:
             if (not isinstance(value, str) or not value or not isinstance(model, str) or not model
                     or not isinstance(levels, list) or any(not isinstance(level, str) for level in levels)):
                 raise ValueError("invalid model identity or effort levels")
+            # Pin every lookup to resolvedModel. A badged value such as
+            # opus[1m] is a picker label for that same resolved id. The bare
+            # name is registered too, and it does not replace an explicit row.
             entry = (model, set(levels))
-            catalog[model] = (model, set(levels))
-            catalog[value] = (value if "[" in value else model, set(levels))
-            # A resolvedModel/value can itself carry a terminal-style "[1m]" context
-            # badge now (Opus's 1M-context default is one example). The badge is
-            # display decoration, so also register the bare identity it decorates,
-            # without letting it override a distinct, explicitly listed model.
+            catalog[model] = entry
+            catalog[value] = entry
             for identity in (model, value):
                 canonical = canonical_model_identity(identity)
                 if canonical and canonical != identity:
@@ -132,7 +128,7 @@ def claude_model_catalog(run) -> dict[str, tuple[str, set[str]]]:
             display_name = row.get("displayName", "")
             alias = strip_terminal_control(display_name).lower() if isinstance(display_name, str) else ""
             if alias in aliases:
-                catalog[alias] = (model, set(levels))
+                catalog[alias] = entry
         return catalog
     except (ValueError, KeyError, TypeError, AttributeError, StopIteration) as error:
         raise ValueError(f"Claude returned an unparseable initialization catalog ({error})") from error
