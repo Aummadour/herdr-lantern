@@ -129,7 +129,7 @@ def codex_route(phrase: str) -> dict[str, object]:
         phrase = "astra"
     parsed = parse_phrase(phrase, keep_effort=False)
     if set(parsed.terms) <= {"gpt", "codex", "6"} and "6" in parsed.terms:
-        fail("model phrase is ambiguous: name astra or an exact model such as gpt-5.5")
+        fail("model phrase is ambiguous: name astra, sol, or luna")
     try:
         models = listed_codex_models(run_catalog(["codex", "debug", "models"]))
     except ValueError as error:
@@ -248,6 +248,10 @@ def grok_route(phrase: str) -> dict[str, object]:
     if phrase.strip().lower() == "default":
         names = [name for name, _ in rows]
         preferred = (
+            "grok-4.7",
+            "grok-4.7-high-fast",
+            "grok-4.7-fast",
+            "grok-4.7-build-fast",
             "grok-4.6-high-fast",
             "grok-4.6-fast",
             "grok-4.6",

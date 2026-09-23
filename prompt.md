@@ -64,7 +64,7 @@ list` before you create anything. Reuse the workspace for the same cwd.
 | "open the tab", "walk me there", "open finances", "focus finances" | `herdr agent focus <target>`, `herdr workspace focus <workspace_id>`, or `herdr tab focus <tab_id>` | Open it. Ask only when more than one target matches. |
 | "open battle paddle", "open the image maker repo" | Same seat route as a named-kind open, using the user spawn default launch injects | They just name a repo and no harness, model, or setting. Do not ask. Use `$HERDR_PLUGIN_ROOT/bin/onboard show` if the injected default is unclear. |
 | "open battle paddle with codex", "seat another" | `herdr workspace create --cwd <dir> --label <label> --no-focus`, `herdr agent start <slug> --kind <kind> --pane <pane_id> -- <kind args>`, one `herdr agent prompt` that starts with the workspace brief, then `herdr tab rename` | Say the seat plan in one line, then run it. Ask only when the repo, kind, or model does not resolve. Do not create a second workspace for the same cwd. |
-| "make Cursor Grok 4.6 high fast my default spawn", "set my default spawn to Codex astra high", "keep the current default" | `$HERDR_PLUGIN_ROOT/bin/onboard apply` with the mapping: Cursor Grok 4.6 high fast → `--kind cursor --model "cursor grok 4.6 high fast"`; Claude Opus high → `--kind claude --model opus --effort high`; Codex Astra high → `--kind codex --model "astra high"`; Grok Build → `--kind grok` and no `--model`; keep → `--keep` | Store it, then confirm with `onboard show`. Later opens that omit kind and model use this default. |
+| "make Cursor Grok 4.7 high fast my default spawn", "set my default spawn to Codex astra high", "keep the current default" | `$HERDR_PLUGIN_ROOT/bin/onboard apply` with the mapping: Cursor Grok 4.7 high fast → `--kind cursor --model "grok 4.7 high fast"`; Cursor Grok 4.6 high fast → `--kind cursor --model "cursor grok 4.6 high fast"`; Claude Opus high → `--kind claude --model opus --effort high`; Codex Astra high → `--kind codex --model "astra high"`; Grok Build → `--kind grok` and no `--model`; keep → `--keep` | Store it, then confirm with `onboard show`. Later opens that omit kind and model use this default. The stored phrase is resolved again at seat time. |
 | "open battle paddle with Cursor" | Seat with `--kind cursor` and the live Cursor model route. | "Cursor" selects the Cursor CLI. |
 | "open battle paddle with Grok" | Seat with `--kind cursor` and a live Cursor Grok model ID. | Bare "Grok" means Grok through Cursor Ultra. |
 | "open battle paddle with Grok Build", "open with SuperGrok" | Seat with `--kind grok` and the live Grok Build model route. | Only Grok Build and SuperGrok select the Grok CLI. |
@@ -164,21 +164,28 @@ Check these choices against the live CLI before each seat:
 | --- | --- | --- |
 | Codex | `astra`, `gpt-6 astra` | `-m gpt-6-astra -c 'model_reasoning_effort="medium"' -c 'service_tier="default"'` |
 | Codex | `astra high` | `-m gpt-6-astra -c 'model_reasoning_effort="high"' -c 'service_tier="default"'` |
-| Codex | `gpt-6` | Ambiguous. Ask for Astra or an exact model. Never silently select GPT-5.5. |
+| Codex | `gpt-6 sol`, `6 sol`, `gpt-6 sol high` | `-m gpt-6-sol`, one verified effort, Fast off unless requested |
+| Codex | `gpt-6 luna`, `gpt-6 luna high` | `-m gpt-6-luna`, one verified effort. Do not pass ultra unless that catalog row lists it. |
+| Codex | bare `sol` or bare `luna` | Ambiguous. Ask for generation 6 or 5.6. |
+| Codex | `gpt-6` | Ambiguous. Ask for Astra, Sol, or Luna. Never silently select GPT-5.6 or GPT-5.5. |
 | Codex | `5.6 sol high [fast]` | `-m gpt-5.6-sol`, verified effort, and a live Fast tier only if requested |
 | Codex | `5.6 terra <effort> [fast]` | `-m gpt-5.6-terra`, one verified `model_reasoning_effort`, and the live Fast service tier ID when requested |
 | Codex | `5.6 luna <effort> [fast]` | `-m gpt-5.6-luna`, one verified `model_reasoning_effort`, and the live Fast service tier ID when requested |
 | Cursor | `5.6 sol high fast` | `--model gpt-5.6-sol-high-fast` |
 | Cursor | `5.6 terra xhigh fast` | `--model gpt-5.6-terra-xhigh-fast` |
 | Cursor | `5.6 luna max fast` | `--model gpt-5.6-luna-max-fast` |
-| Cursor | `cursor grok 4.6 high fast` | `--model cursor-grok-4.6-high-fast` |
+| Cursor | `grok 4.7 high fast` | `--model grok-4.7-high-fast` |
+| Cursor | `cursor grok 4.6 high fast` | `--model cursor-grok-4.6-high-fast` if listed. Do not invent a `cursor-grok-4.7` id. |
+| Cursor | `codex 5.3 high fast` | `--model gpt-5.3-codex-high-fast` |
+| Cursor | `opus 5.5 high fast` | `--model claude-opus-5-5-high-fast` |
 | Cursor | `opus 5 high fast` | `--model claude-opus-5-high-fast` |
 | Cursor | Sol, Terra, Luna, Fable 5.1, Grok, Opus, Sonnet, or another listed family | One exact ID returned by `agent --list-models`. Do not join tokens to make an ID. |
 | Cursor | `fable 5.1 high` | `--model claude-fable-5-1-high` if listed |
 | Cursor | `fable 5.1 thinking high` | `--model claude-fable-5-1-thinking-high` if listed |
 | Claude | `fable high`, `fable 5.1 high`, `claude-fable-5-1 high` | `--model claude-fable-5-1 --effort high`, verified by the live initialization catalog |
-| Claude | Opus high | `--model opus --effort high` |
-| Grok Build | `grok 4.6 high` | `-m grok-4.6 --reasoning-effort high` |
+| Claude | Opus high | `model-route claude "opus high"`. Pass that argv. The resolved id can carry a context badge such as `[1m]`. |
+| Grok Build | `grok 4.7 high` | `-m grok-4.7 --reasoning-effort high` |
+| Grok Build | `grok 4.6 high` | `-m grok-4.6 --reasoning-effort high` if listed |
 | Grok Build | A model from `grok models`, plus an effort | `-m <listed-model> --reasoning-effort <effort>` |
 
 Codex Astra supports low, medium, high, xhigh, max, and ultra. Its live
@@ -187,7 +194,10 @@ The parser keeps integer generations and distinguishes 5 from 5.1. Cursor
 has Fable 5.1 IDs but no Astra ID in the 2026-09-05 check. Never construct one.
 
 The kickoff Codex catalog had no Astra Fast tier. The 2026-09-05 live check
-now lists Fast with ID priority. Fast is off by default. Request it only
+lists Fast with ID priority. The 2026-09-22 live check also lists `gpt-6-sol`
+and `gpt-6-luna` beside Astra. There is no `gpt-6-terra`. Cursor lists Codex
+5.3 as `gpt-5.3-codex-*` and has no GPT-6 id. Grok Build lists `grok-4.7` and
+`grok-4.7-build-fast`. Claude Opus resolves to `claude-opus-5-5[1m]`. Fast is off by default. Request it only
 when the live model publishes one Fast tier ID. Never hardcode priority.
 Normal Codex routes set `service_tier="default"` to override inherited Fast.
 Claude Fable 5.1 is live as `fable` and `claude-fable-5-1`. The installed
@@ -201,18 +211,22 @@ When the user does not name a model:
 
 - Codex interactive and review run `model-route codex default`. This selects
   live Astra with its catalog default effort, currently medium, and no Fast.
-  If Astra is absent, stop and ask. Do not silently substitute Sol or GPT-5.5.
-- Claude defaults to `--model opus --effort high --permission-mode auto`.
+  If Astra is absent, stop and ask. Do not silently substitute Sol, Luna, or GPT-5.5.
+  Bare `sol` and bare `luna` are ambiguous between generation 6 and 5.6.
+- Claude defaults to the argv from `model-route claude default`, then
+  `--permission-mode auto`. Pass the resolved id from that argv. Do not
+  replace it with the bare help alias `opus`.
 - Cursor runs `model-route cursor default`. It uses the live
   `gpt-5.6-sol-high-fast` entry. If that entry is absent, it uses the first
   live high and fast non-Grok entry. It excludes Composer and never invents
   an ID.
 - Bare Grok runs `--kind cursor` with the live result for `model-route cursor
-  "cursor grok 4.6 high fast"`. If that entry is absent, do not switch in
-  silence. Use the substitute process below.
-- Grok Build runs `model-route grok default`. It prefers live `grok-4.6` with
-  high effort. It uses a fast variant only when the Grok catalog lists one.
-  It falls back to live `grok-4.5` with high effort.
+  "grok 4.7 high fast"`. The current id is `grok-4.7-high-fast`. Grok 4.6
+  stays `cursor-grok-4.6-high-fast` when that older id is requested. If the
+  4.7 entry is absent, do not switch in silence. Use the substitute process below.
+- Grok Build runs `model-route grok default`. It prefers live `grok-4.7` with
+  high effort, then `grok-4.6`, then `grok-4.5`. It uses `grok-4.7-build-fast`
+  only when `grok-4.7` itself is absent. A fast request still has to name fast.
 - An explicit user model phrase always wins.
 
 Smart-auto is the default permission tier for Claude, Grok, and Cursor.
@@ -362,7 +376,8 @@ words name that task.
      that splits the current tab into a sibling pane.
    - Seat agents in the smart-auto permission tier, except Codex, which is
      unattended. On `agent start`, pass the kind's own flags after `--`:
-       claude default: `-- --model opus --effort high --permission-mode auto`
+       claude default: `-- <live model-route claude default argv>
+       --permission-mode auto`
        cursor default: `-- <live model-route cursor default argv>
        --auto-review --trust`
        grok default: `-- <live model-route grok default argv>

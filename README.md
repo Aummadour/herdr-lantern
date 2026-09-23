@@ -80,7 +80,7 @@ Leave `HELPER_AGENT` empty to use the first of `agent`, `devin`, `claude`, `code
 
 | Helper you want | Install that CLI | `helper.conf` |
 | --- | --- | --- |
-| Cursor Ultra | Cursor CLI on `PATH` as `agent` (also `cursor-agent`) | `HELPER_AGENT="agent"` · `HELPER_MODEL="cursor-grok-4.6-high-fast"` (empty also defaults to that) · `HELPER_PERMISSION="smart"` (`--auto-review`) |
+| Cursor Ultra | Cursor CLI on `PATH` as `agent` (also `cursor-agent`) | `HELPER_AGENT="agent"` · `HELPER_MODEL="grok-4.7-high-fast"` (empty also defaults to that) · `HELPER_PERMISSION="smart"` (`--auto-review`) |
 | Devin | [Devin CLI](https://docs.devin.ai) — typically `~/.local/bin/devin` | `HELPER_AGENT="devin"` · leave `HELPER_MODEL` empty (Free rejects `--model`; Devin uses `~/.config/devin/config.json`) · `HELPER_PERMISSION="smart"` |
 | Claude Code | [Claude Code](https://code.claude.com/docs) on `PATH` as `claude` | `HELPER_AGENT="claude"` · optional `HELPER_MODEL` · optional `HELPER_EFFORT` (`--effort`) |
 | Codex | [Codex CLI](https://github.com/openai/codex) on `PATH` as `codex` | `HELPER_AGENT="codex"` · optional `HELPER_MODEL` · optional `HELPER_EFFORT` (`model_reasoning_effort`) |
@@ -95,7 +95,7 @@ $EDITOR "$(herdr plugin config-dir aigora.lantern)/helper.conf"
 
 ```sh
 HELPER_AGENT="agent"         # agent, devin, claude, codex, grok, pi; empty = first on PATH
-HELPER_MODEL="cursor-grok-4.6-high-fast"  # optional --model; leave empty for Devin
+HELPER_MODEL="grok-4.7-high-fast"  # optional --model; leave empty for Devin
 HELPER_PROVIDER=""           # pi only: --provider; unused by other helpers
 HELPER_EFFORT=""             # unused for Devin and Cursor agent; pi -> --thinking <value>
 HELPER_CWD="~"               # search root mentioned to the helper
