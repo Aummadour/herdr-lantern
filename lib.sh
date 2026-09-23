@@ -329,7 +329,7 @@ helper_cursor_default_model() {
     # The one model default the plugin owns: Cursor agent with an empty
     # HELPER_MODEL. launch.sh builds the argv from this and the chat
     # identity names it, so it lives here once.
-    printf 'cursor-grok-4.6-high-fast'
+    printf 'grok-4.7-high-fast'
 }
 
 helper_chat_identity() {

@@ -88,7 +88,9 @@ are Codex, Claude Code, Grok Build, and OMP. Cursor and Pi can audit or review;
 they are not Elves main drivers. If a named harness cannot drive Elves, report
 NEEDS YOU and ask for a supported driver. Do not change it in silence.
 
-When the kind is omitted, Astra or gpt-6 astra selects Codex. Fable selects
+When the kind is omitted, Astra or gpt-6 astra selects Codex. `gpt-6 sol`
+and `gpt-6 luna` are explicit Codex models. Bare `sol`, bare `luna`, and
+bare `gpt-6` are ambiguous. Fable selects
 Claude Code unless the user names Cursor or another harness. An explicit
 harness always wins and must have that model in its own catalog.
 

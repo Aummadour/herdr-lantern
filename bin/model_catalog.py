@@ -3,6 +3,22 @@
 import json
 import re
 
+# Headless catalog text can carry ANSI and other control bytes around an id.
+_TERMINAL_CONTROL = re.compile(
+    r"\x1b\[[0-9;?]*[A-Za-z]|\x1b\][^\x07]*(?:\x07|\x1b\\)|[\x00-\x1f\x7f]"
+)
+# Claude marks 1M context with a trailing badge such as "[1m]". The badge is
+# part of the resolved id passed to --model. Lookup also accepts the bare name.
+_TERMINAL_BADGE = re.compile(r"\[[^\]]+\]\s*$")
+
+
+def strip_terminal_control(value: str) -> str:
+    return _TERMINAL_CONTROL.sub("", value)
+
+
+def canonical_model_identity(value: str) -> str:
+    return _TERMINAL_BADGE.sub("", strip_terminal_control(value))
+
 
 def listed_codex_models(text: str) -> list[dict[str, object]]:
     try:
@@ -86,15 +102,27 @@ def claude_model_catalog(run) -> dict[str, tuple[str, set[str]]]:
         catalog = {}
         for row in rows:
             value, model = row["value"], row["resolvedModel"]
+            if isinstance(value, str):
+                value = strip_terminal_control(value)
+            if isinstance(model, str):
+                model = strip_terminal_control(model)
             levels = row.get("supportedEffortLevels", [])
             if (not isinstance(value, str) or not value or not isinstance(model, str) or not model
                     or not isinstance(levels, list) or any(not isinstance(level, str) for level in levels)):
                 raise ValueError("invalid model identity or effort levels")
-            catalog[model] = (model, set(levels))
-            catalog[value] = (value if "[" in value else model, set(levels))
-            alias = row.get("displayName", "").lower()
+            # Always pin the argv id to resolvedModel. A badged value such as
+            # opus[1m] is a picker label for that same resolved id.
+            entry = (model, set(levels))
+            catalog[model] = entry
+            catalog[value] = entry
+            for identity in (model, value):
+                canonical = canonical_model_identity(identity)
+                if canonical and canonical != identity:
+                    catalog.setdefault(canonical, entry)
+            display_name = row.get("displayName", "")
+            alias = strip_terminal_control(display_name).lower() if isinstance(display_name, str) else ""
             if alias in aliases:
-                catalog[alias] = (model, set(levels))
+                catalog[alias] = entry
         return catalog
     except (ValueError, KeyError, TypeError, AttributeError, StopIteration) as error:
         raise ValueError(f"Claude returned an unparseable initialization catalog ({error})") from error

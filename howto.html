@@ -221,7 +221,7 @@
         <tr>
           <td>Cursor</td>
           <td>Cursor CLI as <code>agent</code> (Ultra / Composer)</td>
-          <td><code>HELPER_AGENT="agent"</code>. <code>HELPER_MODEL="cursor-grok-4.6-high-fast"</code>. <code>HELPER_PERMISSION</code> <code>smart</code> uses <code>--auto-review</code>.</td>
+          <td><code>HELPER_AGENT="agent"</code>. <code>HELPER_MODEL="grok-4.7-high-fast"</code>. <code>HELPER_PERMISSION</code> <code>smart</code> uses <code>--auto-review</code>.</td>
         </tr>
         <tr>
           <td>Devin</td>
@@ -256,7 +256,7 @@
     <h2>Edit your config</h2>
     <pre>$EDITOR "$(herdr plugin config-dir aigora.lantern)/helper.conf"</pre>
     <pre>HELPER_AGENT="agent"
-HELPER_MODEL="cursor-grok-4.6-high-fast"
+HELPER_MODEL="grok-4.7-high-fast"
 HELPER_PROVIDER=""
 HELPER_EFFORT=""
 HELPER_CWD="~"
@@ -382,7 +382,7 @@ HELPER_EXTRA_ARGS=""</pre>
       </li>
       <li>
         “Open battle paddle with Grok.”
-        <span>Bare Grok means Cursor with a live Cursor Grok model. Say Grok Build to use the Grok CLI.</span>
+        <span>Bare Grok means Grok Build. The default is grok-4.7-build-fast at medium effort. Say “in Cursor with Grok” to use the Cursor CLI.</span>
       </li>
       <li>
         “Create a GitHub repo for X.”
