@@ -128,7 +128,8 @@ claude-opus-5-5-high-fast - Claude Opus 5.5 1M High Fast
 """
         with patch.object(route, "run_catalog", return_value=catalog):
             result = route.grok_route("default")
-            self.assertEqual(result["argv"], ["-m", "grok-4.7", "--reasoning-effort", "high"])
+            self.assertEqual(result["argv"], ["-m", "grok-4.7-build-fast", "--reasoning-effort", "medium"])
+            self.assertEqual(route.grok_route("grok 4.7 build fast")["model"], "grok-4.7-build-fast")
 
     def test_badged_opus_pins_resolved_model(self):
         catalog = json.dumps({"type": "control_response", "response": {

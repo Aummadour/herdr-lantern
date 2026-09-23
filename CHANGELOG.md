@@ -8,9 +8,10 @@ All notable changes to Lantern, by Elves are documented here.
 
 - Claude Opus routes pin the live resolved id. A catalog badge such as
   `opus[1m]` still selects that id, currently `claude-opus-5-5[1m]`.
-- Grok Build default is live `grok-4.7` at high effort, then `grok-4.6`,
-  then `grok-4.5`. Bare Grok on Cursor is `grok-4.7-high-fast`. The Grok 4.6
-  Cursor id remains `cursor-grok-4.6-high-fast`.
+- Bare Grok seats use Grok Build. The default is `grok-4.7-build-fast` at
+  medium effort, then `grok-4.7` at high effort, then `grok-4.6`, then
+  `grok-4.5`. "Cursor" or "in Cursor with Grok" still selects the Cursor
+  CLI. The Grok 4.6 Cursor id remains `cursor-grok-4.6-high-fast`.
 - Codex routes name `gpt-6-sol` and `gpt-6-luna`. Bare `sol`, bare `luna`,
   and bare `gpt-6` stay ambiguous. Cursor routes name Codex 5.3 and Opus 5.5.
 

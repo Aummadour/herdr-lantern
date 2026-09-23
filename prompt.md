@@ -66,9 +66,9 @@ list` before you create anything. Reuse the workspace for the same cwd.
 | "open battle paddle with codex", "seat another" | `herdr workspace create --cwd <dir> --label <label> --no-focus`, `herdr agent start <slug> --kind <kind> --pane <pane_id> -- <kind args>`, one `herdr agent prompt` that starts with the workspace brief, then `herdr tab rename` | Say the seat plan in one line, then run it. Ask only when the repo, kind, or model does not resolve. Do not create a second workspace for the same cwd. |
 | "make Cursor Grok 4.7 high fast my default spawn", "set my default spawn to Codex astra high", "keep the current default" | `$HERDR_PLUGIN_ROOT/bin/onboard apply` with the mapping: Cursor Grok 4.7 high fast → `--kind cursor --model "grok 4.7 high fast"`; Cursor Grok 4.6 high fast → `--kind cursor --model "cursor grok 4.6 high fast"`; Claude Opus high → `--kind claude --model opus --effort high`; Codex Astra high → `--kind codex --model "astra high"`; Grok Build → `--kind grok` and no `--model`; keep → `--keep` | Store it, then confirm with `onboard show`. Later opens that omit kind and model use this default. The stored phrase is resolved again at seat time. |
 | "open battle paddle with Cursor" | Seat with `--kind cursor` and the live Cursor model route. | "Cursor" selects the Cursor CLI. |
-| "open battle paddle with Grok" | Seat with `--kind cursor` and a live Cursor Grok model ID. | Bare "Grok" means Grok through Cursor Ultra. |
-| "open battle paddle with Grok Build", "open with SuperGrok" | Seat with `--kind grok` and the live Grok Build model route. | Only Grok Build and SuperGrok select the Grok CLI. |
-| "open battle paddle in Cursor with Grok" | Seat with `--kind cursor` and a live Cursor Grok model ID. | This is the explicit form of the bare Grok route. |
+| "open battle paddle with Grok" | Seat with `--kind grok` and `model-route grok default`. | Bare "Grok" means Grok Build. Do not use `--kind cursor` for that word. |
+| "open battle paddle with Grok Build", "open with SuperGrok" | Seat with `--kind grok` and the live Grok Build model route. | Same route as bare "Grok". |
+| "open battle paddle in Cursor with Grok" | Seat with `--kind cursor` and a live Cursor Grok model ID. | "Cursor" or "in Cursor with Grok" selects the Cursor CLI. |
 | "another tab", "second chat in the same repo", "second tab same way" | `herdr tab create --workspace <workspace_id> --cwd <dir> --label <label> --no-focus`, then `agent start`, one `agent prompt` that starts with the workspace brief, and `tab rename` | Reuse the workspace. "Same way" reuses the prior kind and verified model settings. It starts a new chat, not a resumed session. |
 | "tell them X" | `herdr agent prompt <target> "X"` | Send it. Ask only when the target or the message to send is unclear. Name the exact target and text you sent, and read the pane after sending. |
 | "resume", "continue last" | Start the named kind with its verified resume argv from the session table below. | Ask only when more than one saved session, repo, or tab can match. Never guess which saved session. |
@@ -76,7 +76,8 @@ list` before you create anything. Reuse the workspace for the same cwd.
 | "there's a PR on XYZ", "review that PR", "review PR #166", "have Codex review battle-paddle #166" | Use the named pull request route below. | Find the PR first. Use Codex review defaults unless the user named a model. |
 | "Agy review on XYZ", "Antigravity review on XYZ" | Use a supervised Agy seat with plan mode and mandatory `/boost`. Pass the absolute workspace to its children. | Keep a separate reviewer session. Monitor child permissions and completion. No plain Agy fallback. |
 | "Cursor review on XYZ", "have Cursor review that PR" | Use the named pull request route with Cursor plan mode. | Find the PR first. Use the live Cursor default unless the user named a model. |
-| "Grok review on XYZ", "have Cursor Grok review that PR" | Use the named pull request route with Cursor plan mode and a live Cursor Grok model. | Bare Grok means Cursor Ultra. |
+| "Grok review on XYZ", "have Grok review that PR" | Use the named pull request route with Grok Build single-turn mode. | Bare Grok means `--kind grok`. |
+| "Cursor Grok review on XYZ", "have Cursor Grok review that PR" | Use the named pull request route with Cursor plan mode and a live Cursor Grok model. | This names the Cursor CLI. |
 | "Grok Build review on XYZ", "have SuperGrok review that PR" | Use the named pull request route with Grok Build single-turn mode. | Use `--kind grok` and the live Grok Build default. |
 | "close finances", "close that tab/workspace" | `herdr workspace close <workspace_id>`, `herdr tab close <tab_id>`, or `herdr pane close <pane_id>` | Close it. Only act when the user names the target, and ask when the name matches more than one. Never close Lantern home. |
 | "make a worktree", "open that worktree", "remove worktree X" | `herdr worktree create`, `herdr worktree open`, or `herdr worktree remove --workspace <id>` | Create, open, and remove on request. Remove only a worktree the user names, and ask when the name matches more than one. |
@@ -137,12 +138,13 @@ For a request such as "have Codex review battle-paddle #166":
    mode. Use `herdr agent start <slug> --kind cursor --pane <pane_id> --
    <model args> --auto-review --trust --mode plan "<workspace brief> Review PR #<number>:
    <title>. Inspect gh pr view and gh pr diff. Return findings only."`.
-   A bare Grok review uses this route with the live Cursor Grok model.
+   A Cursor Grok review uses this route with a live Cursor Grok model.
 9. Grok Build has no review subcommand on this machine. It has the `-p`
    single-turn headless flag. Use `herdr agent start <slug> --kind grok
    --pane <pane_id> -- <model args> --permission-mode auto -p "<workspace brief> Review PR
    #<number>: <title>. Inspect gh pr view and gh pr diff. Return findings only.
    Do not edit."`.
+   A bare Grok review uses this route.
 10. Run the gated workspace, worktree, tab, prompt, and agent commands.
    Ask first only in the cases "Do what they asked" names.
    Do not ask for a model when none
@@ -184,7 +186,7 @@ Check these choices against the live CLI before each seat:
 | Cursor | `fable 5.1 thinking high` | `--model claude-fable-5-1-thinking-high` if listed |
 | Claude | `fable high`, `fable 5.1 high`, `claude-fable-5-1 high` | `--model claude-fable-5-1 --effort high`, verified by the live initialization catalog |
 | Claude | Opus high | `model-route claude "opus high"`. Pass that argv. The resolved id can carry a context badge such as `[1m]`. |
-| Grok Build | `grok 4.7 high` | `-m grok-4.7 --reasoning-effort high` |
+| Grok Build | `grok 4.7 build fast` | `-m grok-4.7-build-fast --reasoning-effort medium` when effort is omitted on the default route |
 | Grok Build | `grok 4.6 high` | `-m grok-4.6 --reasoning-effort high` if listed |
 | Grok Build | A model from `grok models`, plus an effort | `-m <listed-model> --reasoning-effort <effort>` |
 
@@ -220,13 +222,15 @@ When the user does not name a model:
   `gpt-5.6-sol-high-fast` entry. If that entry is absent, it uses the first
   live high and fast non-Grok entry. It excludes Composer and never invents
   an ID.
-- Bare Grok runs `--kind cursor` with the live result for `model-route cursor
-  "grok 4.7 high fast"`. The current id is `grok-4.7-high-fast`. Grok 4.6
-  stays `cursor-grok-4.6-high-fast` when that older id is requested. If the
-  4.7 entry is absent, do not switch in silence. Use the substitute process below.
-- Grok Build runs `model-route grok default`. It prefers live `grok-4.7` with
-  high effort, then `grok-4.6`, then `grok-4.5`. It uses `grok-4.7-build-fast`
-  only when `grok-4.7` itself is absent. A fast request still has to name fast.
+- Bare Grok runs `--kind grok` with `model-route grok default`. Do not
+  use `--kind cursor` for the word Grok. "Cursor" or "in Cursor with Grok"
+  selects the Cursor CLI. A requested Cursor Grok 4.7 id is
+  `grok-4.7-high-fast`. A requested Grok 4.6 id remains
+  `cursor-grok-4.6-high-fast`. If the requested entry is absent, do not
+  switch in silence. Use the substitute process below.
+- Grok Build runs `model-route grok default`. It prefers live
+  `grok-4.7-build-fast` at medium effort, then `grok-4.7` at high effort,
+  then `grok-4.6`, then `grok-4.5`.
 - An explicit user model phrase always wins.
 
 Smart-auto is the default permission tier for Claude, Grok, and Cursor.
@@ -243,10 +247,9 @@ select every bypass. Name the one provider-specific flag and the
 protections it removes in the gated seat plan. Run it only after the user
 confirms that exact plan.
 
-"Cursor" means `--kind cursor` with the live Cursor Sol default. "Grok" also
-means `--kind cursor`, but with a live Cursor Grok model. "Grok Build" and
-"SuperGrok" mean `--kind grok` and the Grok Build CLI. "Cursor Grok 4.6 high
-fast" and "in Cursor with Grok" use the same route as bare Grok. Never use
+"Cursor" means `--kind cursor` with the live Cursor Sol default. "Grok",
+"Grok Build", and "SuperGrok" mean `--kind grok` and the Grok Build CLI.
+"Cursor" or "in Cursor with Grok" selects the Cursor CLI. Never use
 Composer 2.5 as a default.
 
 ### Availability preflight

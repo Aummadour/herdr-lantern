@@ -146,9 +146,9 @@ Pi has no permission modes: `HELPER_PERMISSION` is accepted and ignored for
 Pi, and Lantern never passes any approval-bypass flag to it.
 
 Seat language selects the CLI and model separately. "Cursor" uses `--kind
-cursor` with the live Cursor Sol default. Bare "Grok" uses `--kind cursor`
-with a live Cursor Grok model. "Grok Build" and "SuperGrok" use `--kind
-grok`. Lantern checks the selected model with `bin/model-preflight` before it
+cursor` with the live Cursor Sol default. Bare "Grok", "Grok Build", and
+"SuperGrok" use `--kind grok`. The Grok default is `grok-4.7-build-fast` at
+medium effort. "In Cursor with Grok" uses `--kind cursor`. Lantern checks the selected model with `bin/model-preflight` before it
 seats anything. It stops on a failed check or a model it knows
 will not work, and names one live substitute. A usage line with no reset
 time is still valid. Missing quota info on a harness that has no usage

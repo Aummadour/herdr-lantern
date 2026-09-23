@@ -589,8 +589,8 @@ printf '%s\n' "$opus_route" | grep -qF '"argv":["--model","claude-opus-5-high-fa
     fail "Cursor Opus route did not use the listed model ID"
 grok_default=$(run_model_route grok \
     default) || fail "Grok live default route"
-printf '%s\n' "$grok_default" | grep -qF '"argv":["-m","grok-4.7","--reasoning-effort","high"]' ||
-    fail "Grok default did not use live Grok 4.7 at high effort"
+printf '%s\n' "$grok_default" | grep -qF '"argv":["-m","grok-4.7-build-fast","--reasoning-effort","medium"]' ||
+    fail "Grok default did not use live grok-4.7-build-fast at medium effort"
 if fable_check=$(run_model_preflight claude fable high); then
     fail "Claude preflight accepted an exhausted Fable bucket"
 else
@@ -671,8 +671,8 @@ else
     preflight_status=$?
 fi
 [ "$preflight_status" -eq 3 ] || fail "Grok catalog miss should return unavailable"
-printf '%s\n' "$grok_miss" | grep -qF '"substitute":{"kind":"grok","model":"grok-4.7","effort":"high"' ||
-    fail "Grok Build miss did not propose live Grok 4.7 high"
+printf '%s\n' "$grok_miss" | grep -qF '"substitute":{"kind":"grok","model":"grok-4.7-build-fast","effort":"medium"' ||
+    fail "Grok Build miss did not propose live grok-4.7-build-fast"
 if run_model_route codex \
     "5.6 terra high fast" >/dev/null 2>&1; then
     fail "model route accepted fast for a model without fast service"
@@ -710,14 +710,16 @@ for review_kind in Cursor Grok; do
 done
 grep -qF '"Cursor" means `--kind cursor`' "$root/prompt.md" ||
     fail "prompt.md does not route Cursor to the Cursor kind"
-grep -qF '"open battle paddle with Grok" | Seat with `--kind cursor`' "$root/prompt.md" ||
-    fail "prompt.md does not route bare Grok through Cursor"
+grep -qF '"open battle paddle with Grok" | Seat with `--kind grok`' "$root/prompt.md" ||
+    fail "prompt.md does not route bare Grok through Grok Build"
 grep -qF '"open battle paddle with Grok Build", "open with SuperGrok" | Seat with `--kind grok`' "$root/prompt.md" ||
     fail "prompt.md does not route Grok Build to the Grok CLI"
 grep -qF '"open battle paddle in Cursor with Grok"' "$root/prompt.md" ||
     fail "prompt.md does not name the explicit Cursor Grok route"
-grep -qF '"Grok review on XYZ", "have Cursor Grok review that PR" | Use the named pull request route with Cursor plan mode' "$root/prompt.md" ||
-    fail "prompt.md does not route bare Grok review through Cursor"
+grep -qF '"Grok review on XYZ", "have Grok review that PR" | Use the named pull request route with Grok Build single-turn mode' "$root/prompt.md" ||
+    fail "prompt.md does not route bare Grok review through Grok Build"
+grep -qF '"Cursor Grok review on XYZ", "have Cursor Grok review that PR"' "$root/prompt.md" ||
+    fail "prompt.md does not keep Cursor Grok review on the Cursor CLI"
 grep -qF '"Grok Build review on XYZ", "have SuperGrok review that PR" | Use the named pull request route with Grok Build single-turn mode' "$root/prompt.md" ||
     fail "prompt.md does not route Grok Build review through the Grok CLI"
 for preflight_file in prompt.md launch.sh README.md; do
@@ -726,8 +728,8 @@ for preflight_file in prompt.md launch.sh README.md; do
     grep -qF 'usage line with no reset' "$root/$preflight_file" ||
         fail "$preflight_file still requires a reset time on Claude usage"
 done
-grep -qF '"Grok" also' "$root/launch.sh" ||
-    fail "launch.sh does not route bare Grok through Cursor"
+grep -qF 'Grok" means \`--kind grok\`' "$root/launch.sh" ||
+    fail "launch.sh does not route bare Grok through Grok Build"
 grep -qF '"Grok Build" and' "$root/launch.sh" ||
     fail "launch.sh does not route Grok Build to the Grok CLI"
 grep -qF 'Never merge' "$root/prompt.md" ||

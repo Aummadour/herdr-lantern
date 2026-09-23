@@ -284,14 +284,22 @@ def check(kind: str, model: str, effort: str) -> int:
     if kind == "grok":
         models = grok_models()
         if model not in models:
+            ranked = (
+                ({"grok", "4.7", "build", "fast"}, "medium"),
+                ({"grok", "4.7"}, "high"),
+                ({"grok", "4.6"}, "high"),
+                ({"grok", "4.5"}, "high"),
+            )
             choice = None
-            for generation in ("4.7", "4.6", "4.5"):
-                choice = cursor_choice(models, {"grok", generation}, model)
+            effort = "high"
+            for required, ranked_effort in ranked:
+                choice = cursor_choice(models, required, model)
                 if choice:
+                    effort = ranked_effort
                     break
             substitute = None
             if choice:
-                substitute = {"kind": "grok", "model": choice, "effort": "high", "fast": False, "argv": ["-m", choice, "--reasoning-effort", "high"]}
+                substitute = {"kind": "grok", "model": choice, "effort": effort, "fast": "fast" in words(choice), "argv": ["-m", choice, "--reasoning-effort", effort]}
             return report_unavailable(kind, model, f"{model} is absent from grok models", substitute)
         return report_available(kind, model, effort)
     models = codex_models()

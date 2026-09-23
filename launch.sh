@@ -242,13 +242,15 @@ $onboard_note
   replace it with the bare help alias opus. Cursor uses the live
   \`model-route cursor default\` result with \`--auto-review --trust\`. It
   prefers \`gpt-5.6-sol-high-fast\` and excludes Grok and Composer from its
-  default fallback. Bare Grok is \`model-route cursor "grok 4.7 high fast"\`.
-  The current id is \`grok-4.7-high-fast\`. A requested Grok 4.6 id remains
-  \`cursor-grok-4.6-high-fast\`. Do not invent \`cursor-grok-4.7\`. Grok Build
-  uses the live \`model-route grok default\` result with \`--permission-mode
-  auto\`. It prefers \`grok-4.7\` at high effort, then \`grok-4.6\`, then
-  \`grok-4.5\`. It uses \`grok-4.7-build-fast\` only when \`grok-4.7\` is
-  absent. Codex interactive and review
+  default fallback. Bare Grok is \`--kind grok\` with \`model-route grok
+  default\`. Do not use \`--kind cursor\` for the word Grok. "Cursor" or
+  "in Cursor with Grok" selects the Cursor CLI. A requested Cursor Grok
+  4.7 id is \`grok-4.7-high-fast\`. A requested Grok 4.6 id remains
+  \`cursor-grok-4.6-high-fast\`. Do not invent \`cursor-grok-4.7\`. Grok
+  Build uses the live \`model-route grok default\` result with
+  \`--permission-mode auto\`. It prefers \`grok-4.7-build-fast\` at medium
+  effort, then \`grok-4.7\` at high effort, then \`grok-4.6\`, then
+  \`grok-4.5\`. Codex interactive and review
   use \`model-route codex default\`: live Astra, catalog default effort
   (currently medium), Fast off with the explicit normal service tier. Pass
   \`--dangerously-bypass-approvals-and-sandbox\` on every start, resume,
@@ -320,10 +322,9 @@ $onboard_note
   \`-r <id>\`, Cursor \`--continue\` or \`--resume <id>\`, Grok
   \`--continue\` or \`--resume <id>\`, Gemini \`--resume latest\`, OpenCode
   \`--continue\`, Devin \`--continue\`, and Pi \`--continue\` or \`--session <id>\`.
-- "Cursor" means \`--kind cursor\` with the live Sol default. "Grok" also
-  means \`--kind cursor\`, but with a live Cursor Grok model. "Grok Build" and
-  "SuperGrok" mean \`--kind grok\` with the live Grok Build default. "In
-  Cursor with Grok" uses the same route as bare Grok.
+- "Cursor" means \`--kind cursor\` with the live Sol default. "Grok" means \`--kind grok\` with the live Grok Build default. "Grok Build" and
+  "SuperGrok" use that same Grok route. "In Cursor with Grok" means
+  \`--kind cursor\` with a live Cursor Grok model.
 - Route "open a review" and "review this" to the real Codex \`review\`
   command. For "review PR N on repo X", resolve the repo, inspect the pull
   request with \`gh -R <owner/repo> pr view\`, verify the local head matches
@@ -337,9 +338,9 @@ $onboard_note
   Reuse an idle or done, interactive ready Cursor agent with \`herdr agent prompt\`. Otherwise start
   \`--kind cursor\` with \`--auto-review --trust --mode plan\` and the live
   Cursor default. Cursor has no review subcommand on this machine.
-- Route "Grok review on X" through the Cursor review route with a live Cursor
-  Grok model. Route "Grok Build review on X" through the same repo and pull
-  request checks. Reuse an idle or done, interactive ready Grok Build agent with \`herdr agent
+- Route "Grok review on X" and "Grok Build review on X" through the same
+  repo and pull request checks. Reuse an idle or done, interactive ready
+  Grok Build agent with \`herdr agent
   prompt\`. Otherwise start \`--kind grok\` with \`--permission-mode auto
   -p\` and the live Grok Build default. Grok Build has no review subcommand.
 - After model resolution, run
